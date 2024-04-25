@@ -1,0 +1,55 @@
+version: '3.9'
+services:
+  app:
+    container_name: etl_app
+    build: ./etl
+    env_file:
+      - ./.env
+    depends_on:
+      redis:
+        condition: service_started
+      elastic:
+        condition: service_healthy
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16
+    container_name: etl_postgres
+    volumes:
+      - etl_postgres_volume:/var/lib/postgresql/data/
+      - ./pg_dump.sql:/docker-entrypoint-initdb.d/init.sql
+    expose:
+      - "5432"
+    env_file:
+      - ./.env.db
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -h localhost -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 5s
+      timeout: 10s
+      retries: 5
+  redis:
+    image: redis:latest
+    container_name: etl_redis
+    volumes:
+      - etl_redis_volume:/data
+    expose:
+      - "6379"
+  elastic:
+    image: elasticsearch:8.6.2
+    container_name: etl_elastic
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+    volumes:
+      - etl_elastic_volume:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+    healthcheck:
+      test: curl -s http://etl_elastic:9200 >/dev/null || exit 1
+      interval: 5s
+      timeout: 10s
+      retries: 5
+volumes:
+  etl_postgres_volume:
+  etl_redis_volume:
+  etl_elastic_volume:
