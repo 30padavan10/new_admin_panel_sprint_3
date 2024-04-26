@@ -36,7 +36,7 @@ class DataTransform:
         self.movies = [Movie.parse_obj(movie) for movie in movies]
 
     def get_bulk(self) -> str:
-        count = self.__count()
+        count = self._count()
         logger.info(f'[INFO] {count} entities transformed from Postgres to ES')
         bulk = []
         for movie in self.movies:
@@ -44,10 +44,10 @@ class DataTransform:
             bulk.append(movie.json(exclude={'updated_at'}))
         return '\n'.join(bulk) + '\n'
 
-    def get_last_extract(self):
+    def get_last_extract(self) -> datetime:
         if self.movies:
             return self.movies[-1].updated_at
 
-    def __count(self):
+    def _count(self) -> int:
         if self.movies:
             return len(self.movies)

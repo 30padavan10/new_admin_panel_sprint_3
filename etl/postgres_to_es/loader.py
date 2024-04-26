@@ -3,6 +3,7 @@ import logging
 import json
 import os
 
+from http import HTTPStatus
 from postgres_to_es.backoff import backoff
 
 exceptions = (requests.exceptions.ConnectionError, )
@@ -22,7 +23,7 @@ class ElasticsearchLoader:
             data = json.load(json_data)
         url = f'http://{self.host}:{self.port}/movies'
         req = requests.put(url, verify=False, headers=self.headers, json=data)
-        if req.status_code == 200:
+        if req.status_code == HTTPStatus.OK:
             logger.info('[INFO] Index ES created.')
         else:
             logger.info('[INFO] Index ES exist.')
@@ -32,7 +33,7 @@ class ElasticsearchLoader:
         """Загрузка пачки данных в Elastic"""
         url = f'http://{self.host}:{self.port}/movies/_bulk'
         req = requests.post(url, verify=False, headers=self.headers, data=data.encode('utf-8'))
-        if req.status_code == 200:
+        if req.status_code == HTTPStatus.OK:
             logger.info('[INFO] Data loaded to ES.')
         else:
             logger.error('[ERROR] Data not loaded to ES.')
